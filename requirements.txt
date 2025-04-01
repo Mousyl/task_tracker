@@ -1,0 +1,10 @@
+fastapi
+unicorn
+sqlalchemy
+psycopg2-binary
+python-dotenv
+uvicorn
+passlib[bcrypt]
+python-jose[cryptography]
+jinja2
+aiofiles

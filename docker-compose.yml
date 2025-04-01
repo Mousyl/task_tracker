@@ -1,0 +1,30 @@
+version: '3.7'
+
+services:
+  db:
+  image: postgres:latest
+  environment:
+    POSTGRES_USER: devuser
+    POSTGRES_PASSWORD: devpassword
+    POSTGRES_DB: devpoject
+  volumes:
+    - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+  ports:
+    - "5432:5432"
+  networks:
+    - backend
+
+app:
+  build: .
+  depends_on:
+    - db
+  environment:
+    DATABASE_URL: "postgresql://devuser:devpassword@db:5432/devproject"
+  ports:
+    "8000:8000"
+  networks:
+    - backend
+
+networks:
+  backend:
+    driver: bridge
