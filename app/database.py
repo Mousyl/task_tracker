@@ -3,13 +3,17 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from app.config import settings
+import os
 
 def create_db():
+    # Use 'db' as host when running in Docker, otherwise use settings.DB_HOST
+    db_host = "db" if os.getenv("DOCKER_CONTAINER") else settings.DB_HOST
+    
     conn = psycopg2.connect(
         dbname="postgres",
         user=settings.DB_USER,
         password=settings.DB_PASSWORD,
-        host=settings.DB_HOST,
+        host=db_host,
         port=settings.DB_PORT
     )
     conn.autocommit = True
