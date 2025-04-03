@@ -49,6 +49,7 @@ async def register_page(request: Request):
 
 @app.post("/register")
 async def register_user(
+    request: Request,
     username: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
@@ -61,7 +62,7 @@ async def register_user(
     user = schemes.UserCreate(username=username, password=password)
     created_user = crud.create_user(db=db, user=user)
     
-    return templates.TemplateResponse("success.html", {"request": Request, "username": username})
+    return templates.TemplateResponse("success.html", {"request": request, "username": username})
 
 @app.post("/token")
 async def login_for_access_token(
