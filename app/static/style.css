@@ -9,7 +9,7 @@ body {
     background-color: #f5f5f5;
 }
 
-.form-container {
+.form-container, .dashboard-container, .success-container {
     background-color: white;
     padding: 2rem;
     border-radius: 8px;
@@ -66,4 +66,35 @@ a {
 
 a:hover {
     text-decoration: underline;
+}
+
+/* Dashboard specific styles */
+.dashboard-container {
+    text-align: center;
+}
+
+.user-info {
+    margin-top: 2rem;
+}
+
+.user-info p {
+    margin-bottom: 1rem;
+}
+
+#username {
+    font-weight: bold;
+    color: #007bff;
+}
+
+/* Success page specific styles */
+.success-container {
+    text-align: center;
+}
+
+.success-container h2 {
+    color: #28a745;
+}
+
+.success-container p {
+    margin: 1rem 0;
 }

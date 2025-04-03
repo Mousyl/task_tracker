@@ -7,8 +7,4 @@ passlib[bcrypt]
 python-jose[cryptography]
 jinja2
 aiofiles
-alembic
-pytest
-black
-flake8
 python-multipart

@@ -1,9 +1,10 @@
-from fastapi import FastAPI, Depends, HTTPException, Form, Request
+from fastapi import FastAPI, Depends, HTTPException, Form, Request, status
 from fastapi.security import OAuth2PasswordBearer
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from starlette.requests import Request
+from starlette.responses import RedirectResponse
 from app.database import engine, SessionLocal
 from app import models, schemes, auth, crud
 import logging
@@ -59,7 +60,8 @@ async def register_user(
     
     user = schemes.UserCreate(username=username, password=password)
     created_user = crud.create_user(db=db, user=user)
-    return {"message": "User created successfully", "username": created_user.username}
+    
+    return templates.TemplateResponse("success.html", {"request": Request, "username": username})
 
 @app.post("/token")
 async def login_for_access_token(
@@ -73,5 +75,27 @@ async def login_for_access_token(
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
     access_token = auth.create_access_token(data={"sub": username})
-    return {"access_token": access_token, "token_type": "bearer"}
+    response = RedirectResponse(url="/dashboard", status_code=status.HTTP_302_FOUND)
+    response.set_cookie(key="access_token", value=f"Bearer {access_token}")
+    return response
+
+@app.get("/dashboard")
+async def dashboard(request: Request, db: Session = Depends(get_db)):
+    logger.info("Dashboard accessed")
+    # Get token from cookie
+    token = request.cookies.get("access_token")
+    if not token:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+    
+    try:
+        # Remove "Bearer " prefix
+        token = token.split(" ")[1]
+        payload = auth.decode_token(token)
+        username = payload.get("sub")
+        if not username:
+            return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
+        
+        return templates.TemplateResponse("dashboard.html", {"request": request, "username": username})
+    except Exception:
+        return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
 
