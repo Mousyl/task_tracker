@@ -3,8 +3,8 @@ from datetime import datetime
 from typing import Optional
 
 class UserCreate(BaseModel):
-    access_token: str
     username: str
+    password: str
 
 class UserOut(BaseModel):
     username: str
