@@ -1,10 +1,13 @@
 fastapi
-unicorn
+uvicorn
 sqlalchemy
 psycopg2-binary
 python-dotenv
-uvicorn
 passlib[bcrypt]
 python-jose[cryptography]
 jinja2
 aiofiles
+alembic
+pytest
+black
+flake8
