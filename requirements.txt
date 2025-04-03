@@ -11,3 +11,4 @@ alembic
 pytest
 black
 flake8
+python-multipart
