@@ -83,13 +83,11 @@ async def login_for_access_token(
 @app.get("/dashboard")
 async def dashboard(request: Request, db: Session = Depends(get_db)):
     logger.info("Dashboard accessed")
-    # Get token from cookie
     token = request.cookies.get("access_token")
     if not token:
         return RedirectResponse(url="/login", status_code=status.HTTP_302_FOUND)
     
     try:
-        # Remove "Bearer " prefix
         token = token.split(" ")[1]
         payload = auth.decode_token(token)
         username = payload.get("sub")
