@@ -6,7 +6,6 @@ from app.config import settings
 import os
 
 def create_db():
-    # Use 'db' as host when running in Docker, otherwise use settings.DB_HOST
     db_host = "db" if os.getenv("DOCKER_CONTAINER") else settings.DB_HOST
     
     conn = psycopg2.connect(

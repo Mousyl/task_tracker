@@ -1,2 +1,7 @@
 .env
 __pycache__
+terraform_aws_key
+terraform.tfvars
+*lock.hcl
+*tfstate*
+.terraform/
