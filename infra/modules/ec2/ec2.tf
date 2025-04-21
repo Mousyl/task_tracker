@@ -10,16 +10,20 @@ resource "aws_launch_template" "my-launch-template-tf" {
   tag_specifications {
     resource_type = "instance"
     tags = {
-      Name = "nginx-instance"
+      Name = "project-instance"
     }
   }
 }
 
 resource "aws_autoscaling_group" "me-asg-tf" {
   name = var.asg_name
-  desired_capacity = 3
-  max_size = 4
-  min_size = 2
+  #temporary configuration
+  desired_capacity = 1
+  max_size = 2
+  min_size = 1
+  #desired_capacity = 3
+  #max_size = 4
+  #min_size = 2
   vpc_zone_identifier = var.subnets
 
   launch_template {
