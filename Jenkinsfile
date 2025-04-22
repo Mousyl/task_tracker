@@ -32,12 +32,7 @@ pipeline {
                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                                 mkdir -p ${PROJECT_DIR}
                                 cd ${PROJECT_DIR}
-                                
-                                if [ -f .env ]; then
-                                    cp .env .env.backup
-                                fi
-                                
-                                find . -mindepth 1 -maxdepth 1 ! -name '.env.backup' -exec rm -rf {} +
+                                rm -rf * .[^.]*
                             "
                         '''
                         
@@ -49,22 +44,26 @@ pipeline {
                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                                 cd ${PROJECT_DIR}
                                 
-                                cat > .env << 'EOL'
-                                SECRET_KEY=${SECRET_KEY}
-                                ALGORITHM=${ALGORITHM}
-                                ACCESS_TOKEN_EXPIRE_MINUTES=${TOKEN_EXPIRE}
-                                DB_NAME=${DB_NAME}
-                                DB_USER=${DB_USER}
-                                DB_PASSWORD=${DB_PASSWORD}
-                                DB_HOST=db
-                                DB_PORT=5432
-                                DOCKER_CONTAINER=true
-                                DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
-                                EOL
+                                # Create .env file with all required variables
+                                echo 'SECRET_KEY=${SECRET_KEY}' > .env
+                                echo 'ALGORITHM=${ALGORITHM}' >> .env
+                                echo 'ACCESS_TOKEN_EXPIRE_MINUTES=${TOKEN_EXPIRE}' >> .env
+                                echo 'POSTGRES_DB=${DB_NAME}' >> .env
+                                echo 'POSTGRES_USER=${DB_USER}' >> .env
+                                echo 'POSTGRES_PASSWORD=${DB_PASSWORD}' >> .env
+                                echo 'DB_HOST=db' >> .env
+                                echo 'DB_PORT=5432' >> .env
+                                echo 'DOCKER_CONTAINER=true' >> .env
+                                echo 'DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}' >> .env
                                 
                                 chmod 600 .env
                                 
-                                ${DOCKER_COMPOSE} down -v || true
+                                if ! systemctl is-active --quiet docker; then
+                                    sudo systemctl start docker
+                                    sleep 5
+                                fi
+                                
+                                docker-compose down -v || true
                                 docker system prune -f
                                 docker-compose up --build -d
                             "
@@ -95,7 +94,7 @@ pipeline {
     post {
         success {
             withCredentials([string(credentialsId: 'ec2-connection', variable: 'REMOTE_HOST')]) {
-                echo " Deployment successful! 🌐 Application URL: http://${REMOTE_HOST}"
+                echo "Deployment successful! Check the app: http://${REMOTE_HOST}"
             }
         }
         failure {
