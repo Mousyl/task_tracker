@@ -23,28 +23,8 @@ variable "route_cidr" {
     type = string
 }
 
-variable "lb_name" {
-    description = "Load Balancer name"
-    type = string
-}
-
-variable "lb_type" {
-    description = "Load Balancer type"
-    type = string
-}
-
-variable "target_group_name" {
-    description = "Target group name"
-    type = string
-}
-
-variable "launch_template_name" {
-    description = "Launch template name"
-    type = string
-}
-
-variable "launch_template_ami" {
-    description = "Launch template ami ID (Ubuntu for eu-north-1)"
+variable "ami_id" {
+    description = "AMI ID (Ubuntu for eu-north-1)"
     type = string
 }
 
@@ -55,21 +35,6 @@ variable "instance_type" {
 
 variable "key_name" {
     description = "Key pair name for Terraform"
-    type = string
-}
-
-variable "asg_name" {
-    description = "Auto scaling group name"
-    type = string
-}
-
-variable "domain_name" {
-    description = "Root domain name"
-    type = string
-}
-
-variable "dns_record_name" {
-    description = "DNS record"
     type = string
 }
 

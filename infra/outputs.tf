@@ -1,3 +1,3 @@
-#output "fqdn_record" {
-#    value = module.dns.fqdn_record
-#}
+output "public_ip" {
+    value = module.ec2.public_ip
+}
