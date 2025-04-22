@@ -27,7 +27,6 @@ pipeline {
                         string(credentialsId: 'algorithm', variable: 'ALGORITHM'),
                         string(credentialsId: 'token-expire', variable: 'TOKEN_EXPIRE')
                     ]) {
-
                         sh '''
                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                                 mkdir -p ${PROJECT_DIR}
@@ -48,21 +47,22 @@ pipeline {
                                 echo 'SECRET_KEY=${SECRET_KEY}' > .env
                                 echo 'ALGORITHM=${ALGORITHM}' >> .env
                                 echo 'ACCESS_TOKEN_EXPIRE_MINUTES=${TOKEN_EXPIRE}' >> .env
-                                echo 'POSTGRES_DB=${DB_NAME}' >> .env
-                                echo 'POSTGRES_USER=${DB_USER}' >> .env
-                                echo 'POSTGRES_PASSWORD=${DB_PASSWORD}' >> .env
+                                echo 'DB_NAME=${DB_NAME}' >> .env
+                                echo 'DB_USER=${DB_USER}' >> .env
+                                echo 'DB_PASSWORD=${DB_PASSWORD}' >> .env
                                 echo 'DB_HOST=db' >> .env
                                 echo 'DB_PORT=5432' >> .env
                                 echo 'DOCKER_CONTAINER=true' >> .env
                                 echo 'DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}' >> .env
                                 
+                                # Set proper permissions
                                 chmod 600 .env
                                 
                                 if ! systemctl is-active --quiet docker; then
                                     sudo systemctl start docker
                                     sleep 5
                                 fi
-                                
+
                                 docker-compose down -v || true
                                 docker system prune -f
                                 docker-compose up --build -d
