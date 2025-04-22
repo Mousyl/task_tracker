@@ -21,12 +21,12 @@ pipeline {
                 sshagent(credentials: ['ec2-key']) {
                     withCredentials([
                         string(credentialsId: 'ec2-connection', variable: 'REMOTE_HOST'),
-                        usernamePassword(credentialsId: 'db-credentials', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASSWORD'),
                         string(credentialsId: 'db-name', variable: 'DB_NAME'),
                         string(credentialsId: 'secret-key', variable: 'SECRET_KEY'),
                         string(credentialsId: 'algorithm', variable: 'ALGORITHM'),
                         string(credentialsId: 'token-expire', variable: 'TOKEN_EXPIRE')
                     ]) {
+                        withCredentials([usernamePassword(credentialsId: 'db-credentials', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASSWORD')]) {
                         sh '''
                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                                 mkdir -p ${PROJECT_DIR}
@@ -54,8 +54,7 @@ pipeline {
                                 echo 'DB_PORT=5432' >> .env
                                 echo 'DOCKER_CONTAINER=true' >> .env
                                 echo 'DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}' >> .env
-                                
-                                # Set proper permissions
+
                                 chmod 600 .env
                                 
                                 if ! systemctl is-active --quiet docker; then
@@ -68,6 +67,7 @@ pipeline {
                                 docker-compose up --build -d
                             "
                         '''
+                        }
                     }
                 }
             }
