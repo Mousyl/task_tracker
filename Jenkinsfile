@@ -22,14 +22,22 @@ pipeline {
                     withCredentials([
                         string(credentialsId: 'ec2-connection', variable: 'REMOTE_HOST'),
                         usernamePassword(credentialsId: 'db-credentials', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASSWORD'),
-                        string(credentialsId: 'db-name', variable: 'DB_NAME')
+                        string(credentialsId: 'db-name', variable: 'DB_NAME'),
+                        string(credentialsId: 'secret-key', variable: 'SECRET_KEY'),
+                        string(credentialsId: 'algorithm', variable: 'ALGORITHM'),
+                        string(credentialsId: 'token-expire', variable: 'TOKEN_EXPIRE')
                     ]) {
-                        // First, ensure remote directory exists and is clean
+
                         sh '''
                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                                 mkdir -p ${PROJECT_DIR}
                                 cd ${PROJECT_DIR}
-                                rm -rf * .[^.]*
+                                
+                                if [ -f .env ]; then
+                                    cp .env .env.backup
+                                fi
+                                
+                                find . -mindepth 1 -maxdepth 1 ! -name '.env.backup' -exec rm -rf {} +
                             "
                         '''
                         
@@ -40,17 +48,24 @@ pipeline {
                         sh '''
                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                                 cd ${PROJECT_DIR}
-                                echo 'DB_USER=${DB_USER}' > .env
-                                echo 'DB_PASSWORD=${DB_PASSWORD}' >> .env
-                                echo 'DB_NAME=${DB_NAME}' >> .env
+                                
+                                cat > .env << 'EOL'
+                                SECRET_KEY=${SECRET_KEY}
+                                ALGORITHM=${ALGORITHM}
+                                ACCESS_TOKEN_EXPIRE_MINUTES=${TOKEN_EXPIRE}
+                                DB_NAME=${DB_NAME}
+                                DB_USER=${DB_USER}
+                                DB_PASSWORD=${DB_PASSWORD}
+                                DB_HOST=db
+                                DB_PORT=5432
+                                DOCKER_CONTAINER=true
+                                DATABASE_URL=postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+                                EOL
+                                
                                 chmod 600 .env
                                 
-                                if ! systemctl is-active --quiet docker; then
-                                    sudo systemctl start docker
-                                    sleep 5
-                                fi
-
-                                docker-compose down || true
+                                ${DOCKER_COMPOSE} down -v || true
+                                docker system prune -f
                                 docker-compose up --build -d
                             "
                         '''
@@ -80,7 +95,7 @@ pipeline {
     post {
         success {
             withCredentials([string(credentialsId: 'ec2-connection', variable: 'REMOTE_HOST')]) {
-                echo "Deployment successful! Check the app: http://${REMOTE_HOST}"
+                echo " Deployment successful! 🌐 Application URL: http://${REMOTE_HOST}"
             }
         }
         failure {
@@ -91,10 +106,15 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                             cd ${PROJECT_DIR}
                             docker-compose logs
+                            echo 'Container Status:'
+                            docker ps -a
                         "
                     '''
                 }
             }
+        }
+        always {
+            cleanWs()
         }
     }
 }
