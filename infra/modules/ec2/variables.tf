@@ -1,10 +1,5 @@
-variable "launch_template_name" {
-    description = "Launch template name"
-    type = string
-}
-
-variable "launch_template_ami" {
-    description = "Launch template ami ID (Ubuntu for eu-north-1)"
+variable "ami_id" {
+    description = "AMI ID for ec2 instance (Ubuntu)"
     type = string
 }
 
@@ -18,22 +13,12 @@ variable "key_name" {
     type = string
 }
 
-variable "security_group_id" {
+variable "subnet_id" {
+    description = "Subnet ID"
+    type = string
+}
+
+variable "security_group_ids" {
     description = "Security group ID"
-    type = string
-}
-
-variable "asg_name" {
-    description = "Auto scaling group name"
-    type = string
-}
-
-variable "subnets" {
-    description = "Subnets list"
     type = list(string)
-}
-
-variable "target_group_arn" {
-    description = "Target Group ARN"
-    type = string
 }
