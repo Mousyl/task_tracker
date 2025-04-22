@@ -8,24 +8,40 @@ pipeline {
     }
 
     stages {
+        stage('Checkout Code') {
+            steps {
+                git branch: 'main',
+                    credentialsId: 'github-ssh',
+                    url: "${REPO}"
+            }
+        }
+
         stage('Deploy to EC2') {
             steps {
-                sshagent(credentials: ['ec2-key', 'github-ssh']) {
+                sshagent(credentials: ['ec2-key']) {
                     withCredentials([string(credentialsId: 'ec2-connection', variable: 'REMOTE_HOST')]) {
                         sh '''
                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
+                                mkdir -p ${PROJECT_DIR}
+                                cd ${PROJECT_DIR}
+                                rm -rf * .[^.]*
+                            "
+                        '''
+                        
+                        sh '''
+                            rsync -avz --exclude '.git' --exclude 'infra' ./ ${REMOTE_USER}@${REMOTE_HOST}:${PROJECT_DIR}/
+                        '''
+
+                        sh '''
+                            ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
+                                cd ${PROJECT_DIR}
+                                
                                 if ! systemctl is-active --quiet docker; then
                                     sudo systemctl start docker
                                     sleep 5
                                 fi
 
-                                rm -rf ${PROJECT_DIR}
-
-                                git clone -b main ${REPO} ${PROJECT_DIR}
-                                cd ${PROJECT_DIR}
-                                rm -rf infra
-
-                                docker-compose down
+                                docker-compose down || true
                                 docker-compose up --build -d
                             "
                         '''
@@ -34,7 +50,7 @@ pipeline {
             }
         }
 
-        stage('Check if app is running') {
+        stage('Health Check') {
             steps {
                 withCredentials([string(credentialsId: 'ec2-connection', variable: 'REMOTE_HOST')]) {
                     sh '''
