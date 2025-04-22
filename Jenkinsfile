@@ -9,31 +9,41 @@ pipeline {
     }
 
     stages {
-        stage('Clone repo to EC2') {
+        stage('Deploy to EC2') {
             steps {
                 sshagent(credentials: ['ec2-key', 'github-ssh']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no $REMOTE_USER@$REMOTE_HOST '
-                        rm -rf $PROJECT_DIR || true &&
-                        git clone -b main $REPO $PROJECT_DIR &&
-                        cd $PROJECT_DIR &&
-                        rm -rf infra &&
-                        
-                        docker-compose down || true &&
+                        if ! systemctl is-active --quiet docker; then
+                            sudo systemctl start docker
+                            sleep 5
+                        fi
+
+                        rm -rf $PROJECT_DIR
+
+                        git clone -b main $REPO $PROJECT_DIR
+                        cd $PROJECT_DIR
+                        rm -rf infra
+
+                        docker-compose down
                         docker-compose up --build -d
-                        '
+                    '
                     """
                 }
             }
         }
 
-
-        stage('Health check') {
+        stage('Check if app is running') {
             steps {
                 sh """
-                echo 'Waiting for app to become alive...'
-                sleep 10
-                curl -f http://$REMOTE_HOST || echo 'App is not responding'
+                sleep 30
+                
+                if curl -f http://$REMOTE_HOST; then
+                    echo "Application is running!"
+                else
+                    echo "Application is not responding"
+                    exit 1
+                fi
                 """
             }
         }
@@ -41,10 +51,18 @@ pipeline {
 
     post {
         success {
-            echo 'Deploy completed successfuly! Check the app: http://$REMOTE_HOST'
+            echo "Deployment successful! Check the app: http://$REMOTE_HOST"
         }
         failure {
-            echo 'Error during deploy'
+            echo "Deployment failed. Check the logs below:"
+            sshagent(credentials: ['ec2-key']) {
+                sh """
+                ssh -o StrictHostKeyChecking=no $REMOTE_USER@$REMOTE_HOST '
+                    cd $PROJECT_DIR
+                    docker-compose logs
+                '
+                """
+            }
         }
     }
 }
