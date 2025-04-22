@@ -19,7 +19,12 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 sshagent(credentials: ['ec2-key']) {
-                    withCredentials([string(credentialsId: 'ec2-connection', variable: 'REMOTE_HOST')]) {
+                    withCredentials([
+                        string(credentialsId: 'ec2-connection', variable: 'REMOTE_HOST'),
+                        usernamePassword(credentialsId: 'db-credentials', usernameVariable: 'DB_USER', passwordVariable: 'DB_PASSWORD'),
+                        string(credentialsId: 'db-name', variable: 'DB_NAME')
+                    ]) {
+                        // First, ensure remote directory exists and is clean
                         sh '''
                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                                 mkdir -p ${PROJECT_DIR}
@@ -35,6 +40,10 @@ pipeline {
                         sh '''
                             ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                                 cd ${PROJECT_DIR}
+                                echo 'DB_USER=${DB_USER}' > .env
+                                echo 'DB_PASSWORD=${DB_PASSWORD}' >> .env
+                                echo 'DB_NAME=${DB_NAME}' >> .env
+                                chmod 600 .env
                                 
                                 if ! systemctl is-active --quiet docker; then
                                     sudo systemctl start docker
