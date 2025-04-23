@@ -29,11 +29,17 @@ pipeline {
                             cd ${PROJECT_DIR}
                             rm -rf * .[^.]*
                         "
+                        '''
 
-                        scp -o StrictHostKeyChecking=no \$ENV_FILE ${REMOTE_USER}@${REMOTE_HOST}:${PROJECT_DIR}/.env
-                        
+                        sh '''
+                        scp $ENV_FILE ${REMOTE_USER}@${REMOTE_HOST}:${PROJECT_DIR}/.env
+                        '''
+
+                        sh '''
                         rsync -avz --exclude '.git' --exclude 'infra' ./ ${REMOTE_USER}@${REMOTE_HOST}:${PROJECT_DIR}/
+                        '''
 
+                        sh '''
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST}"
                             cd ${PROJECT_DIR}
                             chmod 600 .env
