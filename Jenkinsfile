@@ -10,7 +10,9 @@ pipeline {
     stages {
         stage('Checkout Code') {
             steps {
-                git branch: 'main', credentialsId: 'github-ssh', url: "${REPO}"
+                git branch: 'main', 
+                credentialsId: 'github-ssh', 
+                url: "${REPO}"
             }
         }
 
@@ -22,25 +24,33 @@ pipeline {
                         file(credentialsId: 'env-file', variable: 'ENV_FILE')
                     ]) {
                         sh '''
-                            ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
-                                mkdir -p ${PROJECT_DIR}
-                                cd ${PROJECT_DIR}
-                                rm -rf * .[^.]* || true
-                            "
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
+                            mkdir -p ${PROJECT_DIR}
+                            cd ${PROJECT_DIR}
+                            rm -rf * .[^.]*
+                        "
+
+                        scp -o StrictHostKeyChecking=no \$ENV_FILE ${REMOTE_USER}@${REMOTE_HOST}:${PROJECT_DIR}/.env
                         
-                            rsync -avz --exclude '.git' --exclude 'infra' ./ ${REMOTE_USER}@${REMOTE_HOST}:${PROJECT_DIR}/
+                        rsync -avz --exclude '.git' --exclude 'infra' ./ ${REMOTE_USER}@${REMOTE_HOST}:${PROJECT_DIR}/
 
-                            scp -o StrictHostKeyChecking=no $ENV_FILE ${REMOTE_USER}@${REMOTE_HOST}:${PROJECT_DIR}/.env
-
-                            ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
-                                cd ${PROJECT_DIR}
-                                chmod 600 .env
-                                docker-compose down -v || true
-                                docker system prune -f
-                                docker-compose up --build -d
-                            "
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST}"
+                            cd ${PROJECT_DIR}
+                            chmod 600 .env
+                            if [ -f .env]; then
+                                echo '.env file created'
+                            else
+                                echo '.env file not created'
+                                ls -la
+                                exit 1
+                            fi
+                        
+                        docker-compose down -v || true
+                        docker system prune -f
+                        docker-compose up --build -d
+                        "
                         '''
-                        }
+                    }
                 }
             }
         }
@@ -79,6 +89,8 @@ pipeline {
                             docker-compose logs
                             echo 'Container Status:'
                             docker ps -a
+                            docker logs task_tracker_db_1 || true
+                            docker logs task_tracker-app-1 || true
                         "
                     '''
                 }
