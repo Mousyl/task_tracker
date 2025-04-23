@@ -32,7 +32,7 @@ pipeline {
                         '''
 
                         sh '''
-                        scp -o StrictHostKeyChecking=no \$ENV_FILE ${REMOTE_USER}@${REMOTE_HOST}:${PROJECT_DIR}/.env
+                        scp $ENV_FILE ${REMOTE_USER}@${REMOTE_HOST}:${PROJECT_DIR}/.env
                         '''
 
                         sh '''
