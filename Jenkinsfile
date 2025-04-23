@@ -79,6 +79,8 @@ pipeline {
                             docker-compose logs
                             echo 'Container Status:'
                             docker ps -a
+                            docker logs task_tracker_db_1 || true
+                            docker logs task_tracker-app-1 || true
                         "
                     '''
                 }
