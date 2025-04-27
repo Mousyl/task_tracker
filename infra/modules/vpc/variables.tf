@@ -1,6 +1,6 @@
-variable "availability_zones" {
-    description = "Availability zone"
-    type = list(string)
+variable "project_name" {
+    description = "Project name"
+    type = string
 }
 
 variable "vpc_cidr" {
@@ -8,12 +8,22 @@ variable "vpc_cidr" {
     type = string
 }
 
-variable "subnet_cidrs" {
-    description = "CIDR for subnet"
-    type = list(string)
+variable "public_subnets" {
+    description = "CIDR of public subnets"
+    type = map(string)
 }
 
-variable "route_cidr" {
-    description = "CIDR for route"
+variable "private_subnets" {
+    description = "CIDR of privat subnets"
+    type = map(string)
+}
+
+variable "aws_region" {
+  description = "AWS region"
+  type = string
+}
+
+variable "cluster_name" {
+    description = "EKS cluster name"
     type = string
 }
