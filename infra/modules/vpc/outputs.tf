@@ -1,9 +1,11 @@
 output "vpc_id" {
-  description = "Created VPC ID"
-  value = aws_vpc.my-vpc-tf.id
+  value = aws_vpc.root.id
 }
 
 output "public_subnet_ids" {
-  description = "Public subnet ids"
-  value = tolist(aws_subnet.my-public-subnet-tf[*].id)
+  value = [for subnet in aws_subnet.public : subnet.id]
+}
+
+output "private_subnet_ids" {
+  value = [for subnet in aws_subnet.private : subnet.id]
 }
