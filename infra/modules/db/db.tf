@@ -5,27 +5,9 @@ resource "kubernetes_secret" "db_secret" {
     }
 
   data = {
-    DB_NAME = base64encode(var.db_name)
-    DB_USER = base64encode(var.db_user)
-    DB_PASSWORD = base64encode(var.db_password)
-    DB_HOST = base64encode(var.db_host)
-    DB_PORT = base64encode(var.db_port)
-  }
-}
-
-resource "kubernetes_persistent_volume_claim" "db" {
-  metadata {
-    name = "db-pvc"
-  }
-
-  spec {
-    access_modes = ["ReadWriteOnce"]
-
-    resources {
-      requests = {
-        storage = "1Gi"
-      }
-    }
+    POSTGRES_DB = base64encode(var.db_name)
+    POSTGRES_USER = base64encode(var.db_user)
+    POSTGRES_PASSWORD = base64encode(var.db_password)
   }
 }
 
@@ -39,8 +21,31 @@ resource "kubernetes_config_map" "db_init" {
   }
 }
 
+resource "kubernetes_persistent_volume_claim" "db" {
+  metadata {
+    name = "db-pvc"
+  }
+
+  spec {
+    access_modes = ["ReadWriteOnce"]
+    resources {
+      requests = {
+        storage = "5Gi"
+      }
+    }
+
+    storage_class_name = "gp2"
+  }
+}
+
 #Postgres DB deployment and service
 resource "kubernetes_deployment" "db" {
+  depends_on = [
+    kubernetes_secret.db_secret,
+    kubernetes_config_map.db_init,
+    kubernetes_persistent_volume_claim.db
+  ]
+
   metadata {
     name = "db"
     labels = {
@@ -97,21 +102,28 @@ resource "kubernetes_deployment" "db" {
           }
 
           volume_mount {
-            name = "init-sql"
-            mount_path = "/docker-entrypoint-initdb.d/init.sql"
-            sub_path = "init.sql"
+            name = "init-db"
+            mount_path = "/docker-entrypoint-initdb.d"
           }
-        }
 
-        volume {
-          name = "postgres-data"
-          empty_dir {}
-        }
+          liveness_probe {
+            exec {
+              command = ["pg_isready", "-U", var.db_user]
+            }
+            initial_delay_seconds = 5
+            period_seconds = 10
+            timeout_seconds = 5
+            failure_threshold = 3
+          }
 
-        volume {
-          name = "init.sql"
-          config_map {
-            name = kubernetes_config_map.db_init.metadata[0].name
+          readiness_probe {
+            exec {
+              command = ["pg_isready", "-U", var.db_user]
+            }
+            initial_delay_seconds = 5
+            period_seconds = 5
+            timeout_seconds = 3
+            failure_threshold = 3
           }
         }
       }
@@ -120,6 +132,8 @@ resource "kubernetes_deployment" "db" {
 }
 
 resource "kubernetes_service" "db" {
+  depends_on = [kubernetes_deployment.db]
+
   metadata {
     name = "db"
   }

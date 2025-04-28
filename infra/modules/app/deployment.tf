@@ -1,22 +1,28 @@
-# App deployment and service
 resource "kubernetes_deployment" "app" {
   metadata {
     name = var.project_name
+    namespace = var.app_namespace
+    labels = {
+      app = var.project_name
+    }
   }
 
   spec {
     replicas = var.replicas
+
     selector {
       match_labels = {
         app = var.project_name
       }
     }
+
     template {
       metadata {
         labels = {
           app = var.project_name
         }
       }
+
       spec {
         container {
           name = var.project_name
@@ -27,76 +33,67 @@ resource "kubernetes_deployment" "app" {
           }
 
           env {
-            name = "DB_NAME"
+            name = "POSTGRES_NAME"
             value_from {
               secret_key_ref {
                 name = var.db_secret
-                key = "DB_NAME"
+                key = "POSTGRES_NAME"
               }
             }
           }
 
           env {
-            name = "DB_USER"
+            name = "POSTGRES_USER"
             value_from {
               secret_key_ref {
                 name = var.db_secret
-                key = "DB_USER"
+                key = "POSTGRES_USER"
               }
             }
           }
 
           env {
-            name = "DB_PASSWORD"
+            name = "POSTGRES_PASSWORD"
             value_from {
               secret_key_ref {
                 name = var.db_secret
-                key = "DB_PASSWORD"
+                key = "POSTGRES_PASSWORD"
               }
             }
           }
 
-          env {
-            name = "DB_HOST"
-            value_from {
-              secret_key_ref {
-                name = var.db_secret
-                key = "DB_HOST"
-              }
+          resources {
+            limits = {
+              cpu = "500m"
+              memory = "512Mi"
+            }
+            requests = {
+              cpu = "250m"
+              memory = "256Mi"
             }
           }
 
-          env {
-            name = "DB_PORT"
-            value_from {
-              secret_key_ref {
-                name = var.db_secret
-                key = "DB_PORT"
-              }
+          liveness_probe {
+            http_get {
+              path = "/healthz"
+              port = var.app_container_port
             }
+            initial_delay_seconds = 30
+            period_seconds = 10
+            timeout_seconds = 5
+          }
+
+          readiness_probe {
+            http_get {
+              path = "/pathz"
+              port = var.app_container_port
+            }
+            initial_delay_seconds = 10
+            period_seconds = 5
+            timeout_seconds = 3
           }
         }
       }
     }
   }
 }
-
-resource "kubernetes_service" "app" {
-  metadata {
-    name = var.project_name
-  }
-
-  spec {
-    selector = {
-      app = var.project_name
-    }
-
-    port {
-      port = var.app_container_port
-      target_port = var.app_container_port
-    }
-
-    type = "ClusterIP"
-  }
-}
-

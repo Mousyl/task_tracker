@@ -1,7 +1,3 @@
-data "http" "my-ip" {
-  url = "http://checkip.amazonaws.com"
-}
-
 resource "aws_security_group" "eks_nodes" {
   name = "${var.project_name}-eks-nodes-security-group"
   vpc_id = var.vpc_id
@@ -19,11 +15,11 @@ resource "aws_security_group" "eks_nodes" {
     from_port = 22
     to_port = 22
     protocol = "tcp"
-    cidr_blocks = ["${chomp(data.http.my-ip.response_body)}/32"]
+    cidr_blocks = var.allowed_ssh_cidr_blocks
   }
   
   ingress {
-    description = "Allow HTTP"
+    description = "Allow HTTP (public)"
     from_port = 80
     to_port = 80
     protocol = "tcp"
@@ -31,9 +27,18 @@ resource "aws_security_group" "eks_nodes" {
   }
   
   egress {
-    from_port = 0
-    to_port = 0
-    protocol = "all"
+    description = "Allow https traffic out"
+    from_port = 443
+    to_port = 443
+    protocol = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    description = "Allow dns traffic out"
+    from_port = 53
+    to_port = 53
+    protocol = "udp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
