@@ -22,3 +22,29 @@ variable "db_secret" {
     description = "DB secrets(user, password, etc.)"
     type = string
 }
+
+variable "app_namespace" {
+    description = "App namespace"
+    type = string
+}
+
+variable "ingress_name" {
+    description = "Ingress resource name"
+    type = string
+}
+
+variable "host" {
+    type = string
+}
+
+variable "service_name" {
+  type = string
+}
+
+variable "service_port" {
+  type = number
+}
+
+variable "tls_secret_name" {
+  type = string
+}

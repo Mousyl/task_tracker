@@ -1,6 +1,9 @@
-# .tfvars variables
 variable "project_name" {
     description = "Project name"
+    type = string
+}
+
+variable "eks_cluster_role_arn" {
     type = string
 }
 
@@ -14,7 +17,6 @@ variable "subnet_ids" {
     type = list(string)
 }
 
-# default variables
 variable "kubernetes_version" {
     description = "Version of Kubernetes"
     type = string
@@ -38,4 +40,8 @@ variable "min_size" {
 variable "instance_types" {
     description = "EC2 types for nodes"
     type = list(string)
+}
+
+variable "eks_nodes_role_arn" {
+    type = string
 }
