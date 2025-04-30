@@ -2,12 +2,14 @@
 resource "kubernetes_secret" "db_secret" {
   metadata {
     name = "db-secret"
-    }
+  }
 
   data = {
-    POSTGRES_DB = base64encode(var.db_name)
-    POSTGRES_USER = base64encode(var.db_user)
-    POSTGRES_PASSWORD = base64encode(var.db_password)
+    POSTGRES_DB     = var.db_name
+    POSTGRES_USER     = var.db_user
+    POSTGRES_PASSWORD = var.db_password
+    POSTGRES_PORT     = var.db_port
+    POSTGRES_HOST     = var.db_host
   }
 }
 
@@ -23,29 +25,27 @@ resource "kubernetes_config_map" "db_init" {
 
 resource "kubernetes_persistent_volume_claim" "db" {
   metadata {
-    name = "db-pvc"
+    name      = "db-pvc"
+    namespace = "default"
   }
 
   spec {
     access_modes = ["ReadWriteOnce"]
+
     resources {
       requests = {
         storage = "5Gi"
       }
     }
 
-    storage_class_name = "gp2"
+    storage_class_name = var.storage_class_name
   }
+
+  wait_until_bound = false
 }
 
 #Postgres DB deployment and service
 resource "kubernetes_deployment" "db" {
-  depends_on = [
-    kubernetes_secret.db_secret,
-    kubernetes_config_map.db_init,
-    kubernetes_persistent_volume_claim.db
-  ]
-
   metadata {
     name = "db"
     labels = {
@@ -54,13 +54,13 @@ resource "kubernetes_deployment" "db" {
   }
   spec {
     replicas = 1
-        
+
     selector {
       match_labels = {
         app = "db"
       }
     }
-        
+
     template {
       metadata {
         labels = {
@@ -71,9 +71,9 @@ resource "kubernetes_deployment" "db" {
       spec {
         volume {
           name = "postgres-data"
-            persistent_volume_claim {
-              claim_name = kubernetes_persistent_volume_claim.db.metadata[0].name
-            }
+          persistent_volume_claim {
+            claim_name = kubernetes_persistent_volume_claim.db.metadata[0].name
+          }
         }
         volume {
           name = "init-db"
@@ -83,26 +83,31 @@ resource "kubernetes_deployment" "db" {
         }
 
         container {
-          name = "db"
+          name  = "db"
           image = "postgres:latest"
-                
+
           port {
             container_port = 5432
           }
-                
+
           env_from {
             secret_ref {
               name = kubernetes_secret.db_secret.metadata[0].name
             }
           }
 
+          env {
+            name  = "PGDATA"
+            value = "/var/lib/postgresql/data/db-files"
+          }
+
           volume_mount {
-            name = "postgres-data"
+            name       = "postgres-data"
             mount_path = "/var/lib/postgresql/data"
           }
 
           volume_mount {
-            name = "init-db"
+            name       = "init-db"
             mount_path = "/docker-entrypoint-initdb.d"
           }
 
@@ -111,9 +116,9 @@ resource "kubernetes_deployment" "db" {
               command = ["pg_isready", "-U", var.db_user]
             }
             initial_delay_seconds = 5
-            period_seconds = 10
-            timeout_seconds = 5
-            failure_threshold = 3
+            period_seconds        = 10
+            timeout_seconds       = 5
+            failure_threshold     = 3
           }
 
           readiness_probe {
@@ -121,9 +126,9 @@ resource "kubernetes_deployment" "db" {
               command = ["pg_isready", "-U", var.db_user]
             }
             initial_delay_seconds = 5
-            period_seconds = 5
-            timeout_seconds = 3
-            failure_threshold = 3
+            period_seconds        = 5
+            timeout_seconds       = 3
+            failure_threshold     = 3
           }
         }
       }
@@ -132,8 +137,6 @@ resource "kubernetes_deployment" "db" {
 }
 
 resource "kubernetes_service" "db" {
-  depends_on = [kubernetes_deployment.db]
-
   metadata {
     name = "db"
   }
@@ -144,7 +147,7 @@ resource "kubernetes_service" "db" {
     }
 
     port {
-      port = 5432
+      port        = 5432
       target_port = 5432
     }
 

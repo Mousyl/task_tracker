@@ -1,6 +1,6 @@
 resource "kubernetes_service" "app" {
   metadata {
-    name = var.project_name
+    name      = var.project_name
     namespace = var.app_namespace
   }
 
@@ -10,7 +10,7 @@ resource "kubernetes_service" "app" {
     }
 
     port {
-      port = var.app_container_port
+      port        = var.service_port
       target_port = var.app_container_port
     }
 

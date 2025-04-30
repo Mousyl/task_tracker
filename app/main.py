@@ -32,6 +32,10 @@ def get_db():
     finally:
         db.close()
 
+@app.get("/healthz")
+def healthz():
+    return {"status": "ok"}
+
 @app.get("/")
 async def root(request: Request):
     logger.info("Root endpoint accessed")
