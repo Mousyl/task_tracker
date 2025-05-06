@@ -1,6 +1,6 @@
 variable "project_name" {
-    description = "Project name"
-    type = string
+  description = "Project name"
+  type        = string
 }
 
 variable "oidc_provider_arn" {
@@ -12,11 +12,11 @@ variable "oidc_provider_url" {
 }
 
 variable "namespace" {
-  type = string
+  type    = string
   default = "kube-system"
 }
 
 variable "service_account_name" {
-  type = string
+  type    = string
   default = "ebs-csi-controller-sa"
 }

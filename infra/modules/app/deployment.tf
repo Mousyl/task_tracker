@@ -1,6 +1,6 @@
 resource "kubernetes_deployment" "app" {
   metadata {
-    name = var.project_name
+    name      = var.project_name
     namespace = var.app_namespace
     labels = {
       app = var.project_name
@@ -25,19 +25,19 @@ resource "kubernetes_deployment" "app" {
 
       spec {
         container {
-          name = var.project_name
+          name  = var.project_name
           image = var.app_image
-          
+
           port {
             container_port = var.app_container_port
           }
 
           env {
-            name = "POSTGRES_NAME"
+            name = "POSTGRES_DB"
             value_from {
               secret_key_ref {
                 name = var.db_secret
-                key = "POSTGRES_NAME"
+                key  = "POSTGRES_DB"
               }
             }
           }
@@ -47,7 +47,7 @@ resource "kubernetes_deployment" "app" {
             value_from {
               secret_key_ref {
                 name = var.db_secret
-                key = "POSTGRES_USER"
+                key  = "POSTGRES_USER"
               }
             }
           }
@@ -57,18 +57,38 @@ resource "kubernetes_deployment" "app" {
             value_from {
               secret_key_ref {
                 name = var.db_secret
-                key = "POSTGRES_PASSWORD"
+                key  = "POSTGRES_PASSWORD"
+              }
+            }
+          }
+
+          env {
+            name = "POSTGRES_PORT"
+            value_from {
+              secret_key_ref {
+                name = var.db_secret
+                key  = "POSTGRES_PORT"
+              }
+            }
+          }
+
+          env {
+            name = "POSTGRES_HOST"
+            value_from {
+              secret_key_ref {
+                name = var.db_secret
+                key  = "POSTGRES_HOST"
               }
             }
           }
 
           resources {
             limits = {
-              cpu = "500m"
+              cpu    = "500m"
               memory = "512Mi"
             }
             requests = {
-              cpu = "250m"
+              cpu    = "250m"
               memory = "256Mi"
             }
           }
@@ -79,18 +99,18 @@ resource "kubernetes_deployment" "app" {
               port = var.app_container_port
             }
             initial_delay_seconds = 30
-            period_seconds = 10
-            timeout_seconds = 5
+            period_seconds        = 10
+            timeout_seconds       = 5
           }
 
           readiness_probe {
             http_get {
-              path = "/pathz"
+              path = "/healthz"
               port = var.app_container_port
             }
             initial_delay_seconds = 10
-            period_seconds = 5
-            timeout_seconds = 3
+            period_seconds        = 5
+            timeout_seconds       = 3
           }
         }
       }

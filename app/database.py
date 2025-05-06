@@ -9,7 +9,7 @@ def create_db():
     db_host = "db" if os.getenv("DOCKER_CONTAINER") else settings.DB_HOST
     
     conn = psycopg2.connect(
-        dbname="postgres",
+        dbname=settings.DB_NAME,
         user=settings.DB_USER,
         password=settings.DB_PASSWORD,
         host=db_host,

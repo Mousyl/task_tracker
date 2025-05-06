@@ -1,32 +1,29 @@
 variable "release_name" {
   description = "Helm release name"
-  type = string
-  default = "aws-ebs-csi-driver"
+  type        = string
+  default     = "aws-ebs-csi-driver"
 }
 
 variable "repo" {
   description = "Helm release repository"
-  type = string
-  default = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
+  type        = string
+  default     = "https://kubernetes-sigs.github.io/aws-ebs-csi-driver"
 }
 
 variable "chart_version" {
   description = "Version of the EBS CSI driver Helm chart"
   type        = string
+  default = "2.40.2"
 }
 
 variable "namespace" {
   description = "Namespace for driver installation"
-  type = string
-  default = "kube-system"
-}
-
-variable "aws_region" {
-  type = string
+  type        = string
+  default     = "kube-system"
 }
 
 variable "service_account_name" {
-  type = string
+  type    = string
   default = "ebs-csi-controller-sa"
 }
 

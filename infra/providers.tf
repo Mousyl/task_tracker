@@ -1,29 +1,54 @@
+terraform {
+  required_version = ">=1.3.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = ">= 4.0"
+    }
+
+    kubernetes = {
+      source  = "hashicorp/kubernetes"
+      version = ">=2.11"
+    }
+
+    helm = {
+      source  = "hashicorp/helm"
+      version = ">=2.7"
+    }
+
+    tls = {
+      source  = "hashicorp/tls"
+      version = ">=4.0"
+    }
+  }
+}
+
 provider "aws" {
-    region = var.aws_region
+  region = var.aws_region
 }
 
-data "aws_eks_cluster" "cluster" {
-    name = module.eks.cluster_name
+data "aws_eks_cluster" "eks" {
+  name = module.eks.cluster_name
 
-    depends_on = [ module.eks ]
+  depends_on = [module.eks]
 }
 
-data "aws_eks_cluster_auth" "cluster" {
-    name = module.eks.cluster_name
+data "aws_eks_cluster_auth" "eks" {
+  name = module.eks.cluster_name
 
-    depends_on = [ module.eks ]
+  depends_on = [module.eks]
 }
 
 provider "kubernetes" {
-    host = data.aws_eks_cluster.cluster.endpoint
-    cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
-    token = data.aws_eks_cluster_auth.cluster.token
+  host                   = data.aws_eks_cluster.eks.endpoint
+  cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
+  token                  = data.aws_eks_cluster_auth.eks.token
 }
 
 provider "helm" {
-    kubernetes {
-        host = data.aws_eks_cluster.cluster.endpoint
-        cluster_ca_certificate = base64decode(data.aws_eks_cluster.cluster.certificate_authority[0].data)
-        token = data.aws_eks_cluster_auth.cluster.token
-    }
+  kubernetes {
+    host                   = data.aws_eks_cluster.eks.endpoint
+    cluster_ca_certificate = base64decode(data.aws_eks_cluster.eks.certificate_authority[0].data)
+    token                  = data.aws_eks_cluster_auth.eks.token
+  }
 }
