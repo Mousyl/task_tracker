@@ -6,6 +6,7 @@ pipeline {
         CLUSTER_NAME = 'task-tracker-cluster'
         DEPLOYMENT_NAME = 'task-tracker'
         NAMESPACE = 'default'
+        DOCKER_IMAGE = 'task-tracker'
         IMAGE_TAG = ''
         GIT_SHA = ''
         DOCKER_IMAGE_FULL = ''
@@ -19,8 +20,9 @@ pipeline {
                 script {
                     env.GIT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
                     env.IMAGE_TAG = "build-${env.GIT_SHA}"
-                    env.DOCKER_IMAGE_FULL = "${DOCKER_IMAGE}:${IMAGE_TAG}"
+                    env.DOCKER_IMAGE_FULL = "${env.DOCKER_IMAGE}:${env.IMAGE_TAG}"
                     echo "Image tag: ${env.IMAGE_TAG}"
+                    echo "Docker full image: ${env.DOCKER_IMAGE_FULL}"
 
                 }
             }
@@ -41,7 +43,7 @@ pipeline {
                         passwordVariable: 'DOCKERHUB_PASS')
                 ]) {
                     sh """
-                    echo "DOCKERHUB_PASS" | docker login -u "DOCKERHUB_USER" --password-stdin
+                    echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USER}" --password-stdin
                     docker push ${DOCKER_IMAGE_FULL}
                     """
                 }
