@@ -18,8 +18,12 @@ pipeline {
 
                 script {
                     def timestamp = new Date().format("yyyyMMdd-HHmmss", TimeZone.getTimeZone('UTC'))
-                    env.IMAGE_TAG = "build-${timestamp}"
-                    env.DOCKER_IMAGE_FULL = "${env.DOCKER_IMAGE}:${env.IMAGE_TAG}"
+                    def imageTag = "build-${timestamp}"
+                    def fullImage = "${env.DOCKER_IMAGE}:${env.IMAGE_TAG}"
+
+                    env.IMAGE_TAG = imageTag
+                    env.DOCKER_IMAGE_FULL = fullImage
+
 
                     echo "Image tag: ${env.IMAGE_TAG}"
                     echo "Docker full image: ${env.DOCKER_IMAGE_FULL}"
