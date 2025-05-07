@@ -18,21 +18,24 @@ pipeline {
                 checkout scm
 
                 script {
-                    def gitSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                    env.GIT_SHA = gitSha
-                    env.IMAGE_TAG = "build-${env.GIT_SHA}"
-                    env.DOCKER_IMAGE_FULL = "${env.DOCKER_IMAGE}:${env.IMAGE_TAG}"
-                    
-                    echo "Image tag: ${env.IMAGE_TAG}"
-                    echo "Docker full image: ${env.DOCKER_IMAGE_FULL}"
+                    dir('.') {
+                        def gitSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                        env.GIT_SHA = gitSha
+                        env.IMAGE_TAG = "build-${env.GIT_SHA}"
+                        env.DOCKER_IMAGE_FULL = "${env.DOCKER_IMAGE}:${env.IMAGE_TAG}"
 
+                        echo "Image tag: ${env.IMAGE_TAG}"
+                        echo "Docker full image: ${env.DOCKER_IMAGE_FULL}"
+                    }
                 }
             }
         }
         
         stage('Image Build') {
             steps {
-                sh "docker build -t ${DOCKER_IMAGE_FULL} ."
+                sh """
+                docker build -t ${env.DOCKER_IMAGE_FULL} .
+                """
             }
         }
         
