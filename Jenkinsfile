@@ -61,21 +61,25 @@ pipeline {
         
         stage('Deploy') {
             steps {
-                withCredentials([[
-                    $class: 'AmazonWebServicesCredentialsBinding', 
-                    credentialsId: 'aws_creds'
-                ]]) {
-                    dir('infra') {
-                        sh """
-                        terraform init
-                        terraform apply -auto-approve -var='app_image=${DOCKER_IMAGE_FULL}'
-                        """
+                script {
+                    try {
+                        withCredentials([[
+                            $class: 'AmazonWebServicesCredentialsBinding', 
+                            credentialsId: 'aws_creds'
+                        ]]) {
+                            dir('infra') {
+                                sh """
+                                terraform init
+                                terraform apply -auto-approve -var='app_image=${DOCKER_IMAGE_FULL}'
+                                """
+                            }
+                        }
+                    }
+                    catch(err) {
+                        echo "Terraform failed: ${err.getMessage()}"
+                        error "Stopping pipeline due to terraform error."
                     }
                 }
-            }
-            catch(err) {
-                echo "Terraform failed: ${err.getMessage()}"
-                error "Stopping pipeline due to terraform error."
             }
         }
     }
