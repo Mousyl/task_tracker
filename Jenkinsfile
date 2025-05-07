@@ -18,9 +18,11 @@ pipeline {
                 checkout scm
 
                 script {
-                    env.GIT_SHA = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    def gitSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
+                    env.GIT_SHA = gitSha
                     env.IMAGE_TAG = "build-${env.GIT_SHA}"
                     env.DOCKER_IMAGE_FULL = "${env.DOCKER_IMAGE}:${env.IMAGE_TAG}"
+                    
                     echo "Image tag: ${env.IMAGE_TAG}"
                     echo "Docker full image: ${env.DOCKER_IMAGE_FULL}"
 
