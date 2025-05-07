@@ -7,8 +7,6 @@ pipeline {
         DEPLOYMENT_NAME = 'task-tracker'
         NAMESPACE = 'default'
         DOCKER_IMAGE = 'mousyl/task-tracker'
-        IMAGE_TAG = ''
-        DOCKER_IMAGE_FULL = ''
     }
     
     stages {
@@ -35,9 +33,11 @@ pipeline {
             parallel {
                 stage('Image Build') {
                     steps {
-                        sh """
-                        docker build -t ${env.DOCKER_IMAGE_FULL} .
-                        """
+                        script {
+                            sh """
+                            docker build -t ${env.DOCKER_IMAGE_FULL} .
+                            """
+                        }
                     }
                 }
                 
@@ -62,10 +62,12 @@ pipeline {
                         usernameVariable: 'DOCKERHUB_USER', 
                         passwordVariable: 'DOCKERHUB_PASS')
                 ]) {
-                    sh """
-                    echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USER}" --password-stdin
-                    docker push ${DOCKER_IMAGE_FULL}
-                    """
+                    script {
+                        sh """
+                        echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USER}" --password-stdin
+                        docker push ${env.DOCKER_IMAGE_FULL}
+                        """
+                    }
                 }
             }
         }
@@ -81,7 +83,7 @@ pipeline {
                             dir('infra') {
                                 sh """
                                 terraform init
-                                terraform apply -auto-approve -var='app_image=${DOCKER_IMAGE_FULL}'
+                                terraform apply -auto-approve -var='app_image=${env.DOCKER_IMAGE_FULL}'
                                 """
                             }
                         }
@@ -103,10 +105,16 @@ pipeline {
                 $class: 'AmazonWebServicesCredentialsBinding', 
                 credentialsId: 'aws_creds'
             ]]) {
-                sh """
-                aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
-                kubectl rollout undo deployment $DEPLOYMENT_NAME --namespace $NAMESPACE || echo 'Rollback failed.'
-                """
+                script {
+                    try {
+                        sh """
+                        aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+                        kubectl rollout undo deployment $DEPLOYMENT_NAME --namespace $NAMESPACE || echo 'Rollback failed.'
+                        """
+                    } catch (Exception e) {
+                        echo "Rollback failed: ${e.getMessage()}"
+                    }
+                }
             }
         }
         
