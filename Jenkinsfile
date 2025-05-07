@@ -22,12 +22,8 @@ pipeline {
             steps {
                 script {
                     def timestamp = new Date().format("yyyyMMdd-HHmmss", TimeZone.getTimeZone('UTC'))
-                    def imageTag = "build-${timestamp}"
-                    def fullImage = "${env.DOCKER_IMAGE}:${imageTag}"
-
-                    env.IMAGE_TAG = imageTag
-                    env.DOCKER_IMAGE_FULL = fullImage
-
+                    env.IMAGE_TAG = "build-${timestamp}"
+                    env.DOCKER_IMAGE_FULL = "${env.DOCKER_IMAGE}:${env.IMAGE_TAG}"
 
                     echo "Image tag: ${env.IMAGE_TAG}"
                     echo "Docker full image: ${env.DOCKER_IMAGE_FULL}"
@@ -35,11 +31,26 @@ pipeline {
             }
         }
         
-        stage('Image Build') {
-            steps {
-                sh """
-                docker build -t ${env.DOCKER_IMAGE_FULL} .
-                """
+        stage('Build and Validate') {
+            parallel {
+                stage('Image Build') {
+                    steps {
+                        sh """
+                        docker build -t ${env.DOCKER_IMAGE_FULL} .
+                        """
+                    }
+                }
+                
+                stage('Terraform config validation') {
+                    steps {
+                        dir('infra') {
+                            sh """
+                            terraform init -backend=false
+                            terraform validate
+                            """
+                        }
+                    }
+                }
             }
         }
         
@@ -54,17 +65,6 @@ pipeline {
                     sh """
                     echo "${DOCKERHUB_PASS}" | docker login -u "${DOCKERHUB_USER}" --password-stdin
                     docker push ${DOCKER_IMAGE_FULL}
-                    """
-                }
-            }
-        }
-        
-        stage('Terraform config validation') {
-            steps {
-                dir('infra') {
-                    sh """
-                    terraform init -backend=false
-                    terraform validate
                     """
                 }
             }
@@ -112,6 +112,11 @@ pipeline {
         
         success {
             echo "Deployment completed successfully"
+            sh "docker rmi ${env.DOCKER_IMAGE_FULL} || true"
+        }
+        
+        always {
+            sh "docker logout || true"
         }
     }
 }
