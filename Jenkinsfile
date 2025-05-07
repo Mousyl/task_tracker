@@ -7,6 +7,8 @@ pipeline {
         DEPLOYMENT_NAME = 'task-tracker'
         NAMESPACE = 'default'
         DOCKER_IMAGE = 'mousyl/task-tracker'
+        AWS_CREDS = credentials('aws_creds')
+        TFVARS_FILE = credentials('tfvars')
     }
     
     stages {
@@ -71,43 +73,30 @@ pipeline {
                 }
             }
         }
+    }
         
         stage('Deploy') {
             steps {
-                script {
-                    try {
-                        withCredentials([
-                            [$class: 'AmazonWebServicesCredentialsBinding', 
-                             credentialsId: 'aws_creds'],
-                            [file(credentialsId: 'tfvars', variable: 'TFVARS_FILE')],
-                            [usernamePassword(
-                                credentialsId: 'db_creds',
-                                usernameVariable: 'DB_USER',
-                                passwordVariable: 'DB_PASSWORD'
-                            )]
-                        ]) {
-                            dir('infra') {
-                                sh """
-                                cp ${TFVARS_FILE} terraform.tfvars.tmp
-                                sed -i "s/db_password = .*/db_password = \\"${DB_PASSWORD}\\"/" terraform.tfvars.tmp
-                                sed -i "s/db_user = .*/db_user = \\"${DB_USER}\\"/" terraform.tfvars.tmp
+                dir('infra') {
+                    script {
+                        try {
+                            sh """
+                            cp ${TFVARS_FILE} terraform.tfvars
+                                        
+                            terraform init
+                            terraform apply -auto-approve -var-file=terraform.tfvars -var='app_image=${env.DOCKER_IMAGE_FULL}'
                                 
-                                terraform init
-                                terraform apply -auto-approve -var-file=terraform.tfvars.tmp -var='app_image=${env.DOCKER_IMAGE_FULL}'
-                                
-                                rm terraform.tfvars.tmp
-                                """
-                            }
+                            rm terraform.tfvars
+                            """
                         }
-                    }
-                    catch(err) {
-                        echo "Terraform failed: ${err.getMessage()}"
-                        error "Stopping pipeline due to terraform error."
+                        catch(err) {
+                            echo "Terraform failed: ${err.getMessage()}"
+                            error "Stopping pipeline due to terraform error."
+                        }
                     }
                 }
             }
         }
-    }
     
     post {
         failure {
