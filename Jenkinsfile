@@ -15,11 +15,15 @@ pipeline {
         stage('Checkout') {
             steps {
                 checkout scm
+            }
+        }
 
+        stage('Generate docker image') {
+            steps {
                 script {
                     def timestamp = new Date().format("yyyyMMdd-HHmmss", TimeZone.getTimeZone('UTC'))
                     def imageTag = "build-${timestamp}"
-                    def fullImage = "${env.DOCKER_IMAGE}:${env.IMAGE_TAG}"
+                    def fullImage = "${env.DOCKER_IMAGE}:${imageTag}"
 
                     env.IMAGE_TAG = imageTag
                     env.DOCKER_IMAGE_FULL = fullImage
