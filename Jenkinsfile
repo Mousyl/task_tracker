@@ -42,16 +42,16 @@ pipeline {
                         }
                     }
                 }
+            }
+        }
                 
-                stage('Terraform config validation') {
-                    steps {
-                        dir('infra') {
-                            sh """
-                            terraform init -backend=false
-                            terraform validate
-                            """
-                        }
-                    }
+        stage('Terraform config validation') {
+            steps {
+                dir('infra') {
+                    sh """
+                    terraform init -backend=false
+                    terraform validate
+                    """
                 }
             }
         }
@@ -73,8 +73,7 @@ pipeline {
                 }
             }
         }
-    }
-        
+ 
         stage('Deploy') {
             steps {
                 dir('infra') {
@@ -97,6 +96,7 @@ pipeline {
                 }
             }
         }
+    }
     
     post {
         failure {
