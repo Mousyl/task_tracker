@@ -6,7 +6,7 @@ pipeline {
         CLUSTER_NAME = 'task-tracker-cluster'
         DEPLOYMENT_NAME = 'task-tracker'
         NAMESPACE = 'default'
-        DOCKER_IMAGE = 'task-tracker'
+        DOCKER_IMAGE = 'mousyl/task-tracker'
         IMAGE_TAG = ''
         GIT_SHA = ''
         DOCKER_IMAGE_FULL = ''
