@@ -8,7 +8,6 @@ pipeline {
         NAMESPACE = 'default'
         DOCKER_IMAGE = 'mousyl/task-tracker'
         IMAGE_TAG = ''
-        GIT_SHA = ''
         DOCKER_IMAGE_FULL = ''
     }
     
@@ -18,15 +17,12 @@ pipeline {
                 checkout scm
 
                 script {
-                    dir('.') {
-                        def gitSha = sh(script: "git rev-parse --short HEAD", returnStdout: true).trim()
-                        env.GIT_SHA = gitSha
-                        env.IMAGE_TAG = "build-${env.GIT_SHA}"
-                        env.DOCKER_IMAGE_FULL = "${env.DOCKER_IMAGE}:${env.IMAGE_TAG}"
+                    def timestamp = new Date().format("yyyyMMdd-HHmmss", TimeZone.getTimeZone('UTC'))
+                    env.IMAGE_TAG = "build-${timestamp}"
+                    env.DOCKER_IMAGE_FULL = "${env.DOCKER_IMAGE}:${env.IMAGE_TAG}"
 
-                        echo "Image tag: ${env.IMAGE_TAG}"
-                        echo "Docker full image: ${env.DOCKER_IMAGE_FULL}"
-                    }
+                    echo "Image tag: ${env.IMAGE_TAG}"
+                    echo "Docker full image: ${env.DOCKER_IMAGE_FULL}"
                 }
             }
         }
