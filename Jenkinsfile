@@ -76,14 +76,26 @@ pipeline {
             steps {
                 script {
                     try {
-                        withCredentials([[
-                            $class: 'AmazonWebServicesCredentialsBinding', 
-                            credentialsId: 'aws_creds'
-                        ]]) {
+                        withCredentials([
+                            [$class: 'AmazonWebServicesCredentialsBinding', 
+                             credentialsId: 'aws_creds'],
+                            [file(credentialsId: 'tfvars', variable: 'TFVARS_FILE')],
+                            [usernamePassword(
+                                credentialsId: 'db_creds',
+                                usernameVariable: 'DB_USER',
+                                passwordVariable: 'DB_PASSWORD'
+                            )]
+                        ]) {
                             dir('infra') {
                                 sh """
+                                cp ${TFVARS_FILE} terraform.tfvars.tmp
+                                sed -i "s/db_password = .*/db_password = \\"${DB_PASSWORD}\\"/" terraform.tfvars.tmp
+                                sed -i "s/db_user = .*/db_user = \\"${DB_USER}\\"/" terraform.tfvars.tmp
+                                
                                 terraform init
-                                terraform apply -auto-approve -var='app_image=${env.DOCKER_IMAGE_FULL}'
+                                terraform apply -auto-approve -var-file=terraform.tfvars.tmp -var='app_image=${env.DOCKER_IMAGE_FULL}'
+                                
+                                rm terraform.tfvars.tmp
                                 """
                             }
                         }
