@@ -80,12 +80,14 @@ pipeline {
                         withCredentials([file(credentialsId: 'tfvars', variable: 'TFVARS_FILE')]) {
                             try {
                                 sh """
-                                cp ${TFVARS_FILE} terraform.tfvars
-                                        
+                                if [ ! -f terraform.tfvars ]; then
+                                    cp ${TFVARS_FILE} terraform.tfvars
+                                else
+                                    echo "terraform.tfvars file already exists" 
+                                fi
+
                                 terraform init
                                 terraform apply -auto-approve -var-file=terraform.tfvars -var='app_image=${env.DOCKER_IMAGE_FULL}'
-                                
-                                rm terraform.tfvars
                                 """
                             }
                             catch(err) {
@@ -126,7 +128,10 @@ pipeline {
         }
         
         always {
-            sh "docker logout || true"
+            sh """
+            docker logout || true
+            rm -f infra/terraform.tfvars || true
+            """
         }
     }
 }
