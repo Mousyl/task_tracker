@@ -56,6 +56,12 @@ module "irsa_roles" {
   depends_on = [module.oidc]
 }
 
+module "jenkins_role" {
+  source = "./modules/iam/jenkins_roles"
+  project_name = var.project_name
+  aws_region = var.aws_region
+}
+
 module "ebs_csi" {
   source           = "./modules/addons/ebs-csi"
   ebs_csi_role_arn = module.irsa_roles.ebs_csi_role_arn
