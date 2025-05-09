@@ -102,3 +102,13 @@ module "app" {
     module.ingress_nginx
   ]
 }
+
+terraform {
+  backend "s3" {
+    bucket = "tfstate-s3-bucket-tasktracker"
+    key = "tasktracker/terraform.tfstate"
+    region = "eu-north-1"
+    dynamodb_table = "tfstate-dynamodb-table-task-tracker"
+    encrypt = true
+  }
+}
