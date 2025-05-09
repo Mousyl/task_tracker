@@ -79,30 +79,33 @@ pipeline {
             }
         }
  
+        stage('Terraform Plan') {
+            steps {
+                dir('infra') {
+                    withCredentials([file(credentialsId: 'tfvars', variable: 'TFVARS_FILE')]) {
+                        sh """
+                            if [ ! -f terraform.tfvars ]; then
+                                cp ${TFVARS_FILE} terraform.tfvars
+                            else
+                                echo "terraform.tfvars file already exists" 
+                            fi
+
+                            terraform init
+                            aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+                            terraform plan -target=module.app -var-file=terraform.tfvars -var='app_image=${env.DOCKER_IMAGE_FULL}'
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Deploy') {
             steps {
                 dir('infra') {
-                    script {
-                        withCredentials([file(credentialsId: 'tfvars', variable: 'TFVARS_FILE')]) {
-                            try {
-                                sh """
-                                if [ ! -f terraform.tfvars ]; then
-                                    cp ${TFVARS_FILE} terraform.tfvars
-                                else
-                                    echo "terraform.tfvars file already exists" 
-                                fi
-
-                                terraform init
-                                aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
-
-                                terraform apply -auto-approve -var-file=terraform.tfvars -var='app_image=${env.DOCKER_IMAGE_FULL}'
-                                """
-                            }
-                            catch(err) {
-                                echo "Terraform failed: ${err.getMessage()}"
-                                error "Stopping pipeline due to terraform error."
-                            }
-                        }
+                    withCredentials([file(credentialsId: 'tfvars', variable: 'TFVARS_FILE')]) {
+                        sh """
+                            terraform apply -target=module.app -auto-approve -var-file=terraform.tfvars -var='app_image=${env.DOCKER_IMAGE_FULL}'
+                        """ 
                     }
                 }
             }
