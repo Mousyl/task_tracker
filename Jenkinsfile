@@ -93,6 +93,8 @@ pipeline {
                                 fi
 
                                 terraform init
+                                aws eks update-kubeconfig --region $AWS_REGION --name $CLUSTER_NAME
+
                                 terraform apply -auto-approve -var-file=terraform.tfvars -var='app_image=${env.DOCKER_IMAGE_FULL}'
                                 """
                             }
