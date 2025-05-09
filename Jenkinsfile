@@ -8,7 +8,6 @@ pipeline {
         NAMESPACE = 'default'
         DOCKER_IMAGE = 'mousyl/task-tracker'
         AWS_CREDS = credentials('aws_creds')
-        TFVARS_FILE = credentials('tfvars')
     }
     
     stages {
@@ -78,19 +77,21 @@ pipeline {
             steps {
                 dir('infra') {
                     script {
-                        try {
-                            sh """
-                            cp ${TFVARS_FILE} terraform.tfvars
+                        withCredentials([file(credentialsId: 'tfvars', variable: 'TFVARS_FILE')]) {
+                            try {
+                                sh """
+                                cp ${TFVARS_FILE} terraform.tfvars
                                         
-                            terraform init
-                            terraform apply -auto-approve -var-file=terraform.tfvars -var='app_image=${env.DOCKER_IMAGE_FULL}'
+                                terraform init
+                                terraform apply -auto-approve -var-file=terraform.tfvars -var='app_image=${env.DOCKER_IMAGE_FULL}'
                                 
-                            rm terraform.tfvars
-                            """
-                        }
-                        catch(err) {
-                            echo "Terraform failed: ${err.getMessage()}"
-                            error "Stopping pipeline due to terraform error."
+                                rm terraform.tfvars
+                                """
+                            }
+                            catch(err) {
+                                echo "Terraform failed: ${err.getMessage()}"
+                                error "Stopping pipeline due to terraform error."
+                            }
                         }
                     }
                 }
