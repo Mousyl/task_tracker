@@ -32,7 +32,9 @@ resource "aws_iam_policy" "jenkins" {
     {
         Effect = "Allow",
         Action = [
-            "eks:DescribeCluster"
+            "eks:DescribeCluster",
+            "eks:ListCluster",
+            "eks:AccessKubernetesApi"
         ],
         Resource = "*"
     }]
