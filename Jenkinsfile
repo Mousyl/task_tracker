@@ -86,7 +86,7 @@ pipeline {
                                     echo "terraform.tfvars file already exists" 
                                 fi
 
-                                terraform init -input=false
+                                terraform init
                                 terraform apply -auto-approve -var-file=terraform.tfvars -var='app_image=${env.DOCKER_IMAGE_FULL}'
                                 """
                             }
